@@ -49,17 +49,20 @@ const ollama = new Ollama({ host: OLLAMA_HOST, fetch: fetchWithTimeout });
 const VALID_RISK_LEVELS = new Set(['Low', 'Medium', 'High', 'Critical']);
 const RISK_RANK = { Low: 1, Medium: 2, High: 3, Critical: 4 };
 
-// Indian Scam Behavioral Triggers
+// Indian Scam Behavioral Triggers across English, Hindi, Bengali, Tamil, Telugu, Kannada, Marathi, Gujarati, and Hinglish
 const SCAM_PATTERNS = [
   {
     jobId: 'IN-2001',
     triggers: [
       /like\s*(?:video|youtube|media|channel)/i,
+      /(?:लाइक|सब्सक्राइब|ভিডিও|லைக்|లైక్|ಲೈಕ್|लाईक)/i,
       /micro-?tasks?/i,
       /(?:telegram|wa\.me|t\.me|whatsapp).*(?:group|vip|payout)/i,
-      /(?:₹|rs\.?|inr)?\s*150/i,
+      /(?:टेलीग्राम|व्हाट्सएप|টেলিগ্রাম|டெலிகிராம்|టెలిగ్రామ్|ಟೆಲಿಗ್ರಾಂ)/i,
+      /(?:₹|rs\.?|inr|টাকা|ரூபாய்|రూపాయలు|ರೂಪಾಯಿ)?\s*150/i,
       /(?:prepaid|merchant)\s*task/i,
-      /(?:recharge|deposit)\s*₹?\s*[0-9]+/i,
+      /(?:recharge|deposit|top-?up)\s*(?:₹|rs\.?)?\s*[0-9]+/i,
+      /(?:earn|kamaye|kamao|kamana|আয়|சம்பாதிக்கலாம்|సంపాదించండి|ಗಳಿಸಿ)\s*(?:₹|rs\.?)?\s*(?:1500|2000|3000|5000)/i,
       /1500\s*-\s*5000/i
     ]
   },
@@ -67,10 +70,12 @@ const SCAM_PATTERNS = [
     jobId: 'IN-2002',
     triggers: [
       /(?:refundable|mandatory|advance)\s*(?:security\s*deposit|laptop\s*fee|training\s*fee|insurance\s*fee|asset\s*fee)/i,
+      /(?:जमा|डिपॉजिट|अनामत|জামানত|முன்பணம்|డిపాజిట్|ಠೇವಣಿ)/i,
       /laptop\s*(?:fee|security|deposit|insurance)/i,
       /background\s*check\s*fee/i,
       /@(?:gmail|yahoo|hotmail|outlook)\.com/i,
       /(?:urgent|immediate)\s*joining\s*without\s*interview/i,
+      /(?:बिना\s*इंटरव्यू|সরাসরি\s*নিয়োগ|நேர்காணல்\s*இன்றி|ఇంటర్వ్యూ\s*లేకుండా|ಸಂದರ್ಶನವಿಲ್ಲದೆ)/i,
       /(?:4,00,000|7,00,000|6\s*lpa|4\s*lpa)/i
     ]
   },
@@ -78,8 +83,10 @@ const SCAM_PATTERNS = [
     jobId: 'IN-2003',
     triggers: [
       /data\s*entry/i,
+      /(?:डेटा\s*एंट्री|ডাটা\s*এন্ট্রি|டேட்டா\s*என்ட்ரி|డేటా\s*ఎంట్రీ|ಡೇಟಾ\s*ಎಂಟ್ರಿ)/i,
       /form\s*fill(?:er|ing)/i,
       /legal\s*(?:action|notice|court|extortion|fine|settlement)/i,
+      /(?:कोर्ट|कानूनी\s*नोटिस|আদালত|நீதிமன்றம்|కోర్టు|ನ್ಯಾಯಾಲಯ)/i,
       /accuracy\s*(?:sla|level|penalty)/i,
       /breach\s*of\s*contract/i,
       /upi\s*collect\s*request/i
@@ -104,6 +111,7 @@ const CORPORATE_WHITELIST = new Set([
 
 const SYSTEM_PROMPT = `You are PhishGuard, an expert scam-detection and cyber defense assistant for university students and jobseekers in India.
 Analyze the untrusted message provided by the user and assess how likely it is to be a fraud, task scam, or phishing attempt.
+Support ALL languages (English, Hindi, Bengali, Tamil, Telugu, Kannada, Marathi, Gujarati, Malayalam, Punjabi, Odia, Urdu, and mixed Hinglish / regional Romanized scripts). Comprehend the fraudulent intent regardless of the language or script used.
 
 Return ONLY a JSON object with exactly these fields:
 {

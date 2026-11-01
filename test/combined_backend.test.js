@@ -68,6 +68,20 @@ test('2. Indian Scam Dataset & Pattern Matching Knowledge Base', async (t) => {
     const match = matchIndianScamPattern(text);
     assert.equal(match.matchedPatternId, 'IN-2002');
   });
+
+  await t.test('should detect scam patterns across regional Indian languages (Hindi, Kannada, Bengali, Tamil)', () => {
+    // Hindi Devanagari
+    const hindiText = 'घर बैठे पैसे कमाएं, यूट्यूब वीडियो लाइक करें और रोजाना ₹1500 से ₹5000 कमाएं। टेलीग्राम ग्रुप जॉइन करें।';
+    assert.equal(matchIndianScamPattern(hindiText).matchedPatternId, 'IN-2001');
+
+    // Bengali
+    const bengaliText = 'ঘরে বসে টাকা আয় করুন, ইউটিউব ভিডিও লাইক করুন, টেলিগ্রাম গ্রুপে যোগ দিন।';
+    assert.equal(matchIndianScamPattern(bengaliText).matchedPatternId, 'IN-2001');
+
+    // Kannada
+    const kannadaText = 'ದಿನಕ್ಕೆ ೨೦೦೦ ಗಳಿಸಿ, ಯೂಟ್ಯೂಬ್ ವಿಡಿಯೋ ಲೈಕ್ ಮಾಡಿ, ಟೆಲಿಗ್ರಾಂ ಜಾಯಿನ್ ಆಗಿ.';
+    assert.equal(matchIndianScamPattern(kannadaText).matchedPatternId, 'IN-2001');
+  });
 });
 
 test('3. Deterministic Fallback & Zero-False-Positive Guarantee', async (t) => {
