@@ -21,7 +21,7 @@ const CONFUSABLE_MAP = {
   '\u03BD': 'v',
 };
 
-const UPI_DOMAINS = [
+export const UPI_DOMAINS = [
   'okaxis', 'okhdfcbank', 'oksbi', 'okicici', 'paytm', 'ybl', 'ibl', 'axl',
   'apl', 'barodampay', 'upi', 'idfcbank', 'federal', 'indus', 'kotak'
 ];

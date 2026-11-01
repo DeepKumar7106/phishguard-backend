@@ -8,25 +8,32 @@ datasource db {
 }
 
 model ScanReport {
-  id                 String   @id @default(uuid())
-  contentHash        String   @unique
+  id                 String       @id @default(uuid())
+  contentHash        String       @unique
   target             String?
+  targetEndpoint     String?      @unique
+  reportCount        Int          @default(1)
+  domainCacheId      String?
+  domainCache        DomainCache? @relation(fields: [domainCacheId], references: [domain], onDelete: SetNull)
   rawContent         String
   inputType          String
   riskLevel          String
   redFlags           String
   explanation        String
   actionableGuidance String
-  createdAt          DateTime @default(now())
+  createdAt          DateTime     @default(now())
 
   @@index([target, createdAt])
+  @@index([domainCacheId])
 }
 
 model DomainCache {
-  domain        String   @id
+  domain        String       @id
   ageInDays     Int?
-  isWhitelisted Boolean  @default(false)
-  isBlacklisted Boolean  @default(false)
-  dailyReports  String   @default("[]")
-  updatedAt     DateTime @updatedAt
+  isWhitelisted Boolean      @default(false)
+  isBlacklisted Boolean      @default(false)
+  reportCount   Int          @default(0)
+  dailyReports  String       @default("[]")
+  updatedAt     DateTime     @updatedAt
+  reports       ScanReport[]
 }

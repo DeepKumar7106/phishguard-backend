@@ -86,7 +86,11 @@ export function aggregateReportsByDate(reports) {
       continue;
     }
 
-    counts.set(date, (counts.get(date) ?? 0) + 1);
+    const reportCount = Number.isFinite(report?.reportCount)
+      ? Math.max(0, report.reportCount)
+      : 1;
+
+    counts.set(date, (counts.get(date) ?? 0) + reportCount);
   }
 
   return [...counts.entries()]
@@ -155,7 +159,7 @@ export async function getScamHistory(rawTarget) {
     where: {
       OR: [{ target }, { contentHash: target }],
     },
-    select: { createdAt: true },
+    select: { createdAt: true, reportCount: true },
     orderBy: { createdAt: 'asc' },
   });
 

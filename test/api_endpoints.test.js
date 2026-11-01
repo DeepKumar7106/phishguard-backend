@@ -7,6 +7,7 @@ process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'file:./dev.db';
 
 const { default: app } = await import('../src/index.js');
+const { prisma } = await import('../src/config/prisma.js');
 
 /**
  * Dispatches an in-memory HTTP request through Express middleware and routes.
@@ -176,10 +177,23 @@ test('4. PhishGuard Unified API Endpoints', async (t) => {
     assert.equal(body.verdict.risk_level, 'Low');
   });
 
-  await t.test('POST /api/report should queue crowd report and rate-limit duplicates', async () => {
+  await t.test('POST /api/report should increment endpoint and domain report counts', async (t) => {
+    const domain = 'report-route-test.example';
+    const targetEndpoint = `https://${domain}/claim`;
+
+    t.after(async () => {
+      await prisma.scanReport.deleteMany({
+        where: {
+          OR: [{ targetEndpoint }, { target: domain }],
+        },
+      });
+      await prisma.domainCache.deleteMany({ where: { domain } });
+    });
+
     const reportPayload = {
-      scamType: 'TASK_SCAM_YOUTUBE',
-      description: 'Scammer asked for ₹5000 deposit after ₹150 initial payout on Telegram.'
+      targetEndpoint,
+      inputType: 'url',
+      domain,
     };
 
     const res1 = await request(app, {
@@ -190,7 +204,26 @@ test('4. PhishGuard Unified API Endpoints', async (t) => {
     assert.equal(res1.status, 201);
     const body1 = await res1.json();
     assert.equal(body1.success, true);
-    assert.equal(body1.status, 'STAGED');
+    assert.equal(body1.status, 'RECORDED');
+    assert.equal(body1.endpointReportCount, 1);
+    assert.equal(body1.domainReportCount, 1);
+
+    const res2 = await request(app, {
+      method: 'POST',
+      url: '/api/v1/report',
+      body: reportPayload
+    });
+    assert.equal(res2.status, 201);
+    const body2 = await res2.json();
+    assert.equal(body2.endpointReportCount, 2);
+    assert.equal(body2.domainReportCount, 2);
+
+    const invalid = await request(app, {
+      method: 'POST',
+      url: '/api/report',
+      body: { inputType: 'url' }
+    });
+    assert.equal(invalid.status, 400);
   });
 
   after(() => {

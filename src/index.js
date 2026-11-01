@@ -20,6 +20,14 @@ import {
   normalizeHistoryTarget,
 } from './services/scamHistory.js';
 import {
+  deriveReportDomain,
+  deriveReportEndpoint,
+  loadReportCounts,
+  normalizeReportDomain,
+  normalizeReportEndpoint,
+  recordEndpointReport,
+} from './services/endpointReporting.js';
+import {
   connectDatabase,
   disconnectDatabase,
   prisma,
@@ -233,9 +241,23 @@ async function handleAnalyze(req, res, next) {
       const cachedResponse = await getCachedJson(cacheKey);
 
       if (cachedResponse) {
+        const reportEndpoint = deriveReportEndpoint(
+          content,
+          cachedResponse.metadataChecks,
+        );
+        const reportDomain = deriveReportDomain(
+          reportEndpoint,
+          cachedResponse.metadataChecks,
+        );
+        const reportCounts = await loadReportCounts({
+          endpoint: reportEndpoint,
+          domain: reportDomain,
+        });
+
         res.set('X-Cache', 'HIT');
         return res.status(200).json({
           ...cachedResponse,
+          ...reportCounts,
           cached: true,
           layers: {
             ...(cachedResponse.layers ?? {}),
@@ -313,9 +335,18 @@ async function handleAnalyze(req, res, next) {
     await deleteCachedJson(`${HISTORY_CACHE_PREFIX}${target}`);
   }
 
+  const reportEndpoint = deriveReportEndpoint(content, metadataChecks);
+  const reportDomain = deriveReportDomain(reportEndpoint, metadataChecks);
+  const reportCounts = await loadReportCounts({
+    endpoint: reportEndpoint,
+    domain: reportDomain,
+  });
+
   const responsePayload = {
     success: true,
     cached: false,
+    endpointReportCount: reportCounts.endpointReportCount,
+    domainReportCount: reportCounts.domainReportCount,
     input: {
       inputType: layer1.metadata.inputType,
       contentHash: hash,
@@ -408,39 +439,80 @@ app.get('/api/v1/dataset/india-scams', datasetHandler);
 
 /**
  * POST /api/report (and /api/v1/report)
- * Community threat report ingestion with duplicate rate limiting.
+ * Records an endpoint report and increments endpoint/domain report counts.
  */
 const reportHandler = async (req, res) => {
-  const { scamType, description, rawPayload } = req.body ?? {};
+  const { targetEndpoint, inputType, domain } = req.body ?? {};
 
-  if (!scamType || typeof scamType !== 'string' || scamType.trim() === '') {
+  const normalizedEndpoint = normalizeReportEndpoint(targetEndpoint);
+  if (!normalizedEndpoint) {
     return res.status(400).json({
       success: false,
-      error: 'Query or payload must include string "scamType".',
+      error: 'Request body must include a non-empty string "targetEndpoint".',
     });
   }
 
-  const payloadText = String(description || rawPayload || scamType).trim();
-  const hash = hashContent(payloadText);
-  const lockKey = `report:lock:${hash}`;
-
-  // Redis duplicate check (5-minute cooldown)
-  const isDuplicate = await getCachedJson(lockKey);
-  if (isDuplicate) {
-    return res.status(429).json({
+  if (inputType !== undefined && typeof inputType !== 'string') {
+    return res.status(400).json({
       success: false,
-      error: 'Duplicate threat report submitted recently. Please wait before re-submitting.',
+      error: '"inputType" must be a string when provided.',
     });
   }
 
-  await setCachedJson(lockKey, { reportedAt: new Date().toISOString() }, 300);
+  let normalizedDomain = null;
+  if (
+    domain !== undefined &&
+    domain !== null &&
+    String(domain).trim() !== ''
+  ) {
+    normalizedDomain = normalizeReportDomain(domain);
+    if (!normalizedDomain) {
+      return res.status(400).json({
+        success: false,
+        error: '"domain" must be a valid domain name when provided.',
+      });
+    }
+  }
 
-  return res.status(201).json({
-    success: true,
-    reportId: `rep-${hash.slice(0, 12)}`,
-    status: 'STAGED',
-    message: 'Threat report successfully staged for crowd intelligence verification.',
-  });
+  try {
+    const result = await recordEndpointReport({
+      targetEndpoint: normalizedEndpoint,
+      inputType,
+      domain: normalizedDomain,
+    });
+
+    const historyKeys = new Set();
+    const endpointHistoryTarget = normalizeHistoryTarget(normalizedEndpoint);
+    if (endpointHistoryTarget) {
+      historyKeys.add(`${HISTORY_CACHE_PREFIX}${endpointHistoryTarget}`);
+    }
+    if (result.domain) {
+      historyKeys.add(`${HISTORY_CACHE_PREFIX}${result.domain}`);
+    }
+    if (result.report.target) {
+      historyKeys.add(`${HISTORY_CACHE_PREFIX}${result.report.target}`);
+    }
+
+    await Promise.allSettled(
+      [...historyKeys].map((key) => deleteCachedJson(key)),
+    );
+
+    return res.status(201).json({
+      success: true,
+      reportId: result.report.id,
+      targetEndpoint: result.report.targetEndpoint,
+      domain: result.domain,
+      endpointReportCount: result.report.reportCount,
+      domainReportCount: result.domainReportCount,
+      status: 'RECORDED',
+    });
+  } catch (error) {
+    console.error('[report] could not record endpoint report:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Could not record the endpoint report.',
+    });
+  }
 };
 
 app.post('/api/report', reportHandler);
