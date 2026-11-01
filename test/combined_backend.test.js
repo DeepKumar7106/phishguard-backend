@@ -107,4 +107,24 @@ test('3. Deterministic Fallback & Zero-False-Positive Guarantee', async (t) => {
     assert.equal(verdict.matched_pattern_id, 'IN-2003');
     assert.ok(verdict.actionable_guidance.length > 0);
   });
+
+  await t.test('should detect diverse cyber scam archetypes (digital arrest, banking phishing, reverse UPI)', () => {
+    // 1. Digital Arrest / Police Extortion
+    const digitalArrest = 'This is Mumbai Police cyber crime officer. A FedEx parcel with illegal drugs was sent with your Aadhaar. Connect to Skype video call immediately for digital arrest.';
+    const v1 = executeDeterministicFallback(digitalArrest);
+    assert.equal(v1.risk_level, 'High');
+    assert.ok(v1.red_flags.some(f => f.toLowerCase().includes('digital arrest')));
+
+    // 2. Banking / SIM KYC Phishing
+    const kycPhishing = 'Urgent: Your SBI YONO account and SIM card will be blocked within 24 hours. Click link to update KYC or download support apk.';
+    const v2 = executeDeterministicFallback(kycPhishing);
+    assert.equal(v2.risk_level, 'High');
+    assert.ok(v2.red_flags.some(f => f.toLowerCase().includes('suspension')));
+
+    // 3. Reverse UPI QR code trap
+    const upiTrap = 'I will pay you ₹5,000 for your old laptop. Scan this QR code and enter UPI PIN to receive money in your account.';
+    const v3 = executeDeterministicFallback(upiTrap);
+    assert.equal(v3.risk_level, 'High');
+    assert.ok(v3.red_flags.some(f => f.toLowerCase().includes('upi')));
+  });
 });
