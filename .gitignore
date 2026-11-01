@@ -25,3 +25,7 @@ dist-ssr
 
 /src/generated/prisma
 .env
+prisma/dev.db
+prisma/dev.db-journal
+prisma/dev.db-wal
+prisma/dev.db-shm

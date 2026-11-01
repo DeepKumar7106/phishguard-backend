@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ScanReport {
+  id                 String   @id @default(uuid())
+  contentHash        String   @unique
+  rawContent         String
+  inputType          String
+  riskLevel          String
+  redFlags           String
+  explanation        String
+  actionableGuidance String
+  createdAt          DateTime @default(now())
+}
+
+model DomainCache {
+  domain        String   @id
+  ageInDays     Int?
+  isWhitelisted Boolean  @default(false)
+  isBlacklisted Boolean  @default(false)
+  updatedAt     DateTime @updatedAt
+}
