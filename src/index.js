@@ -8,12 +8,20 @@ import { preprocessInput } from './services/preprocessing.js';
 import { checkMetadata } from './services/metadata.js';
 import { analyzeWithQwen, QwenEngineError } from './services/qwenEngine.js';
 import {
+  deriveHistoryTarget,
+  getScamHistory,
+  HISTORY_CACHE_PREFIX,
+  HISTORY_CACHE_TTL_SECONDS,
+  normalizeHistoryTarget,
+} from './services/scamHistory.js';
+import {
   connectDatabase,
   disconnectDatabase,
   prisma,
 } from './config/prisma.js';
 import {
   connectRedis,
+  deleteCachedJson,
   getCachedJson,
   isRedisReady,
   quitRedis,
@@ -52,12 +60,19 @@ function logCacheBypass(reason) {
   console.warn(`[cache] Redis unavailable, bypassing cache: ${reason}`);
 }
 
-async function persistScanReport({ hash, rawContent, inputType, verdict }) {
+async function persistScanReport({
+  hash,
+  target,
+  rawContent,
+  inputType,
+  verdict,
+}) {
   try {
     await prisma.scanReport.upsert({
       where: { contentHash: hash },
       create: {
         contentHash: hash,
+        target,
         rawContent,
         inputType,
         riskLevel: verdict.risk_level,
@@ -66,6 +81,7 @@ async function persistScanReport({ hash, rawContent, inputType, verdict }) {
         actionableGuidance: JSON.stringify(verdict.actionable_guidance),
       },
       update: {
+        target,
         rawContent,
         inputType,
         riskLevel: verdict.risk_level,
@@ -222,12 +238,18 @@ app.post('/api/analyze', async (req, res, next) => {
   }
 
   // Persistence: best-effort SQLite write.
+  const target = deriveHistoryTarget(metadataChecks, hash);
   const persisted = await persistScanReport({
     hash,
+    target,
     rawContent: content,
     inputType: layer1.metadata.inputType,
     verdict,
   });
+
+  if (persisted) {
+    await deleteCachedJson(`${HISTORY_CACHE_PREFIX}${target}`);
+  }
 
   const responsePayload = {
     success: true,
@@ -235,6 +257,7 @@ app.post('/api/analyze', async (req, res, next) => {
     input: {
       inputType: layer1.metadata.inputType,
       contentHash: hash,
+      target,
     },
     preprocessing: {
       cleanedText: layer1.cleanedText,
@@ -278,6 +301,67 @@ app.post('/api/analyze', async (req, res, next) => {
   }
 
   return res.status(200).json(responsePayload);
+});
+
+/**
+ * GET /api/scam-history?target=<domain_or_hash>
+ *
+ * Cache-aside date aggregation for a domain, IP, or SHA-256 content hash.
+ */
+app.get('/api/scam-history', async (req, res) => {
+  const { target: rawTarget } = req.query;
+
+  if (typeof rawTarget !== 'string' || rawTarget.trim() === '') {
+    return res.status(400).json({
+      error: 'Query parameter "target" is required.',
+    });
+  }
+
+  const target = normalizeHistoryTarget(rawTarget);
+  if (!target) {
+    return res.status(400).json({
+      error: 'Query parameter "target" must be a domain, IP, or content hash.',
+    });
+  }
+
+  const cacheKey = `${HISTORY_CACHE_PREFIX}${target}`;
+  let cacheState = 'MISS';
+
+  try {
+    if (!isRedisReady()) {
+      cacheState = 'BYPASS';
+      logCacheBypass('client is not ready');
+    } else {
+      const cachedHistory = await getCachedJson(cacheKey);
+
+      if (cachedHistory) {
+        res.set('X-Cache', 'HIT');
+        return res.status(200).json(cachedHistory);
+      }
+    }
+  } catch (error) {
+    cacheState = 'BYPASS';
+    logCacheBypass(error?.message || 'cache lookup failed');
+  }
+
+  res.set('X-Cache', cacheState);
+
+  try {
+    const history = await getScamHistory(target);
+
+    try {
+      await setCachedJson(cacheKey, history, HISTORY_CACHE_TTL_SECONDS);
+    } catch (error) {
+      console.warn(`[cache] could not store ${cacheKey}: ${error.message}`);
+    }
+
+    return res.status(200).json(history);
+  } catch (error) {
+    console.error('[history] query failed:', error);
+    return res.status(503).json({
+      error: 'Scam history is temporarily unavailable.',
+    });
+  }
 });
 
 // 404 fallback

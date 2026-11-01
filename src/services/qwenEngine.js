@@ -22,8 +22,8 @@ function fetchWithTimeout(url, options = {}) {
 
 const ollama = new Ollama({ host: OLLAMA_HOST, fetch: fetchWithTimeout });
 
-const VALID_RISK_LEVELS = new Set(['Low', 'Medium', 'High']);
-const RISK_RANK = { Low: 1, Medium: 2, High: 3 };
+const VALID_RISK_LEVELS = new Set(['Low', 'Medium', 'High']); // update to four levels critical, high, medium and low
+const RISK_RANK = { Low: 1, Medium: 2, High: 3 }; // same for the ranks add critical : 4
 
 // The model is told to return only this shape. `format: 'json'` enforces valid
 // JSON; the schema and validation below are still needed because the model

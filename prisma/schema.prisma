@@ -10,6 +10,7 @@ datasource db {
 model ScanReport {
   id                 String   @id @default(uuid())
   contentHash        String   @unique
+  target             String?
   rawContent         String
   inputType          String
   riskLevel          String
@@ -17,6 +18,8 @@ model ScanReport {
   explanation        String
   actionableGuidance String
   createdAt          DateTime @default(now())
+
+  @@index([target, createdAt])
 }
 
 model DomainCache {
@@ -24,5 +27,6 @@ model DomainCache {
   ageInDays     Int?
   isWhitelisted Boolean  @default(false)
   isBlacklisted Boolean  @default(false)
+  dailyReports  String   @default("[]")
   updatedAt     DateTime @updatedAt
 }

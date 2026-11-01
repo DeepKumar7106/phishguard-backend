@@ -431,9 +431,9 @@ async function analyzeDomain(candidate, lists) {
         );
         source = 'cache';
         resolved = true;
-      } else if (isFreshCacheRecord(cached)) {
+      } else if (isFreshCacheRecord(cached) && cached.ageInDays !== null) {
         ageInDays = effectiveCachedAge(cached);
-        rdapStatus = ageInDays === null ? 'no_date' : 'verified';
+        rdapStatus = 'verified';
         source = 'cache';
         resolved = true;
       } else if (cached.ageInDays !== null) {
