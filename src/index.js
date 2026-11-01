@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
 
+import { extractTextFromBuffer } from './services/ocr.js';
 import { preprocessInput } from './services/preprocessing.js';
 import { checkMetadata } from './services/metadata.js';
 import {
@@ -214,9 +215,16 @@ async function handleAnalyze(req, res, next) {
 
     content = req.body?.content || req.body?.ocrText || '';
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      // Automatically extract text from image buffer using Tesseract OCR
+      const ocrResult = await extractTextFromBuffer(req.file.buffer);
+      content = ocrResult.text;
+      imageMetadata.ocrExtracted = ocrResult.extracted;
+    }
+
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Uploaded image contains no readable text. Please provide content text alongside the image.',
+        error: 'Uploaded image contains no readable text. Please ensure the image has clear visible text, or provide text in the description.',
       });
     }
   }

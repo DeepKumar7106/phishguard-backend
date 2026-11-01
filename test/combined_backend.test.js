@@ -68,6 +68,20 @@ test('2. Indian Scam Dataset & Pattern Matching Knowledge Base', async (t) => {
     const match = matchIndianScamPattern(text);
     assert.equal(match.matchedPatternId, 'IN-2002');
   });
+
+  await t.test('should detect scam patterns across regional Indian languages (Hindi, Kannada, Bengali, Tamil)', () => {
+    // Hindi Devanagari
+    const hindiText = 'घर बैठे पैसे कमाएं, यूट्यूब वीडियो लाइक करें और रोजाना ₹1500 से ₹5000 कमाएं। टेलीग्राम ग्रुप जॉइन करें।';
+    assert.equal(matchIndianScamPattern(hindiText).matchedPatternId, 'IN-2001');
+
+    // Bengali
+    const bengaliText = 'ঘরে বসে টাকা আয় করুন, ইউটিউব ভিডিও লাইক করুন, টেলিগ্রাম গ্রুপে যোগ দিন।';
+    assert.equal(matchIndianScamPattern(bengaliText).matchedPatternId, 'IN-2001');
+
+    // Kannada
+    const kannadaText = 'ದಿನಕ್ಕೆ ೨೦೦೦ ಗಳಿಸಿ, ಯೂಟ್ಯೂಬ್ ವಿಡಿಯೋ ಲೈಕ್ ಮಾಡಿ, ಟೆಲಿಗ್ರಾಂ ಜಾಯಿನ್ ಆಗಿ.';
+    assert.equal(matchIndianScamPattern(kannadaText).matchedPatternId, 'IN-2001');
+  });
 });
 
 test('3. Deterministic Fallback & Zero-False-Positive Guarantee', async (t) => {
@@ -92,5 +106,25 @@ test('3. Deterministic Fallback & Zero-False-Positive Guarantee', async (t) => {
     assert.ok(verdict.score >= 80);
     assert.equal(verdict.matched_pattern_id, 'IN-2003');
     assert.ok(verdict.actionable_guidance.length > 0);
+  });
+
+  await t.test('should detect diverse cyber scam archetypes (digital arrest, banking phishing, reverse UPI)', () => {
+    // 1. Digital Arrest / Police Extortion
+    const digitalArrest = 'This is Mumbai Police cyber crime officer. A FedEx parcel with illegal drugs was sent with your Aadhaar. Connect to Skype video call immediately for digital arrest.';
+    const v1 = executeDeterministicFallback(digitalArrest);
+    assert.equal(v1.risk_level, 'High');
+    assert.ok(v1.red_flags.some(f => f.toLowerCase().includes('digital arrest')));
+
+    // 2. Banking / SIM KYC Phishing
+    const kycPhishing = 'Urgent: Your SBI YONO account and SIM card will be blocked within 24 hours. Click link to update KYC or download support apk.';
+    const v2 = executeDeterministicFallback(kycPhishing);
+    assert.equal(v2.risk_level, 'High');
+    assert.ok(v2.red_flags.some(f => f.toLowerCase().includes('suspension')));
+
+    // 3. Reverse UPI QR code trap
+    const upiTrap = 'I will pay you ₹5,000 for your old laptop. Scan this QR code and enter UPI PIN to receive money in your account.';
+    const v3 = executeDeterministicFallback(upiTrap);
+    assert.equal(v3.risk_level, 'High');
+    assert.ok(v3.red_flags.some(f => f.toLowerCase().includes('upi')));
   });
 });
