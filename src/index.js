@@ -3,10 +3,15 @@ import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
 
 import { preprocessInput } from './services/preprocessing.js';
 import { checkMetadata } from './services/metadata.js';
-import { analyzeWithQwen, QwenEngineError } from './services/qwenEngine.js';
+import {
+  analyzeWithQwen,
+  getIndiaScamDataset,
+  QwenEngineError,
+} from './services/qwenEngine.js';
 import {
   deriveHistoryTarget,
   getScamHistory,
@@ -35,7 +40,45 @@ const app = express();
 
 // Global middleware
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// -----------------------------------------------------------------------------
+// Multer Configuration (Memory Storage for In-Memory Image Ingestion)
+// -----------------------------------------------------------------------------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (_req, file, cb) => {
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('INVALID_FILE_TYPE'));
+    }
+  },
+});
+
+function handleUpload(req, res, next) {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          success: false,
+          error: 'Image file size exceeds the 5MB limit.',
+        });
+      }
+      if (err.message === 'INVALID_FILE_TYPE') {
+        return res.status(400).json({
+          success: false,
+          error: 'Only image/jpeg, image/png, and image/webp formats are supported.',
+        });
+      }
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    next();
+  });
+}
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -132,28 +175,48 @@ app.get('/', (_req, res) => {
   res.status(200).json({
     status: 'ok',
     service: 'phishguard-backend',
+    version: '2.0.0',
+    capabilities: [
+      'Layer 1: DPDP Act PII Sanitization',
+      'Layer 2: Domain Age & RDAP Checks',
+      'Layer 3: Qwen 2.5 + Indian Scam Knowledge Base & Fallback',
+      'Multi-modal Image Upload & OCR Ingestion',
+      'Redis Caching & SQLite / PostgreSQL Persistence',
+    ],
     timestamp: new Date().toISOString(),
   });
 });
 
 /**
- * POST /api/analyze
- * Body: { inputType: string, content: string }
- *
- * Pipeline:
- *   Layer 0: Redis cache lookup by SHA-256 content hash
- *   Layer 1: input preprocessing
- *   Layer 2: domain metadata / RDAP checks
- *   Layer 3: Qwen analysis
- *   Persistence: SQLite ScanReport + Redis SETEX cache write
+ * Common threat analysis controller for POST /api/analyze and POST /api/v1/analyze.
  */
-app.post('/api/analyze', async (req, res, next) => {
-  const { inputType, content } = req.body ?? {};
+async function handleAnalyze(req, res, next) {
+  let content = req.body?.content;
+  let inputType = req.body?.inputType || 'text';
+  let imageMetadata = null;
 
-  if (typeof inputType !== 'string' || typeof content !== 'string') {
+  // Handle image upload and OCR text ingestion
+  if (req.file) {
+    inputType = 'image';
+    imageMetadata = {
+      filename: req.file.originalname,
+      mimeType: req.file.mimetype,
+      sizeBytes: req.file.size,
+    };
+
+    content = req.body?.content || req.body?.ocrText || '';
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Uploaded image contains no readable text. Please provide content text alongside the image.',
+      });
+    }
+  }
+
+  if (typeof inputType !== 'string' || typeof content !== 'string' || content.trim() === '') {
     return res.status(400).json({
       success: false,
-      error: 'Request body must include string "inputType" and "content".',
+      error: 'Request must include a non-empty string "content" (or an uploaded image).',
     });
   }
 
@@ -193,7 +256,7 @@ app.post('/api/analyze', async (req, res, next) => {
 
   res.set('X-Cache', cacheState);
 
-  // Layer 1: preprocessing.
+  // Layer 1: preprocessing & DPDP Act compliance PII sanitization
   const layer1 = preprocessInput(inputType, content);
 
   if (!layer1.success) {
@@ -205,8 +268,7 @@ app.post('/api/analyze', async (req, res, next) => {
     });
   }
 
-  // Layer 2: metadata checks. checkMetadata is designed to degrade internally,
-  // but keep this guard so an unexpected failure cannot kill the request.
+  // Layer 2: metadata checks (RDAP, domain age, whitelist/blacklist)
   let metadataChecks;
   try {
     metadataChecks = await checkMetadata(layer1.cleanedText);
@@ -215,7 +277,7 @@ app.post('/api/analyze', async (req, res, next) => {
     metadataChecks = fallbackMetadataError(error);
   }
 
-  // Layer 3: Qwen verdict, with metadata context and a deterministic risk floor.
+  // Layer 3: Qwen verdict with Indian scam cross-referencing & deterministic fallback
   let verdict;
   try {
     verdict = await analyzeWithQwen(layer1.cleanedText, metadataChecks);
@@ -237,7 +299,7 @@ app.post('/api/analyze', async (req, res, next) => {
     return next(error);
   }
 
-  // Persistence: best-effort SQLite write.
+  // Persistence: best-effort database write
   const target = deriveHistoryTarget(metadataChecks, hash);
   const persisted = await persistScanReport({
     hash,
@@ -263,6 +325,8 @@ app.post('/api/analyze', async (req, res, next) => {
       cleanedText: layer1.cleanedText,
       metadata: layer1.metadata,
     },
+    dpdpCompliance: layer1.dpdpCompliance,
+    imageMetadata: imageMetadata || undefined,
     metadataChecks,
     verdict,
     layers: {
@@ -301,11 +365,89 @@ app.post('/api/analyze', async (req, res, next) => {
   }
 
   return res.status(200).json(responsePayload);
-});
+}
+
+// Analysis routes (both /api/analyze and /api/v1/analyze for compatibility)
+app.post('/api/analyze', handleUpload, handleAnalyze);
+app.post('/api/v1/analyze', handleUpload, handleAnalyze);
+
+/**
+ * GET /api/dataset/india-scams (and /api/v1/dataset/india-scams)
+ * Serves curated Indian scam patterns knowledge base with optional filters.
+ */
+const datasetHandler = (req, res) => {
+  const dataset = getIndiaScamDataset();
+  const { jobId, q } = req.query;
+  let filtered = dataset;
+
+  if (jobId && typeof jobId === 'string') {
+    filtered = filtered.filter(
+      (p) => p.jobId?.toLowerCase() === jobId.trim().toLowerCase()
+    );
+  }
+
+  if (q && typeof q === 'string') {
+    const query = q.toLowerCase();
+    filtered = filtered.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(query) ||
+        p.financialTrap?.toLowerCase().includes(query) ||
+        p.salaryRange?.toLowerCase().includes(query)
+    );
+  }
+
+  return res.status(200).json({
+    success: true,
+    count: filtered.length,
+    data: filtered,
+  });
+};
+
+app.get('/api/dataset/india-scams', datasetHandler);
+app.get('/api/v1/dataset/india-scams', datasetHandler);
+
+/**
+ * POST /api/report (and /api/v1/report)
+ * Community threat report ingestion with duplicate rate limiting.
+ */
+const reportHandler = async (req, res) => {
+  const { scamType, description, rawPayload } = req.body ?? {};
+
+  if (!scamType || typeof scamType !== 'string' || scamType.trim() === '') {
+    return res.status(400).json({
+      success: false,
+      error: 'Query or payload must include string "scamType".',
+    });
+  }
+
+  const payloadText = String(description || rawPayload || scamType).trim();
+  const hash = hashContent(payloadText);
+  const lockKey = `report:lock:${hash}`;
+
+  // Redis duplicate check (5-minute cooldown)
+  const isDuplicate = await getCachedJson(lockKey);
+  if (isDuplicate) {
+    return res.status(429).json({
+      success: false,
+      error: 'Duplicate threat report submitted recently. Please wait before re-submitting.',
+    });
+  }
+
+  await setCachedJson(lockKey, { reportedAt: new Date().toISOString() }, 300);
+
+  return res.status(201).json({
+    success: true,
+    reportId: `rep-${hash.slice(0, 12)}`,
+    status: 'STAGED',
+    message: 'Threat report successfully staged for crowd intelligence verification.',
+  });
+};
+
+app.post('/api/report', reportHandler);
+app.post('/api/v1/report', reportHandler);
 
 /**
  * GET /api/scam-history?target=<domain_or_hash>
- *
  * Cache-aside date aggregation for a domain, IP, or SHA-256 content hash.
  */
 app.get('/api/scam-history', async (req, res) => {

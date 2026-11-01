@@ -1,0 +1,187 @@
+[
+  {
+    "jobId": "IN-2001",
+    "title": "Part-Time Social Media Optimization Executive",
+    "commonLocations": ["Bengaluru", "Mumbai", "Remote"],
+    "communicationChannels": ["WhatsApp", "Telegram"],
+    "salaryRange": "₹1,500 - ₹5,000 / day",
+    "paymentMethods": ["UPI", "PhonePe", "Google Pay", "Paytm"],
+    "behavioralFlags": [
+      "No interview required",
+      "Asks to complete simple micro-tasks like liking digital media clips",
+      "Asks to move the conversation from WhatsApp to a VIP Telegram group",
+      "Gives small initial payouts (₹150) to build trust"
+    ],
+    "financialTrap": "Prepaid Merchant Task: Demands cash deposits (top-ups starting at ₹5,000) to clear a faked negative balance or unlock higher-paying task tiers."
+  },
+  {
+    "jobId": "IN-2002",
+    "title": "Graduate Trainee / Software Engineer",
+    "commonLocations": ["Pune", "Hyderabad", "Noida", "Gurugram"],
+    "communicationChannels": ["Direct Call", "Gmail", "Lookalike Domains"],
+    "salaryRange": "₹4,00,000 - ₹7,00,000 / annum",
+    "paymentMethods": ["IMPS", "NEFT Bank Transfer"],
+    "behavioralFlags": [
+      "Recruiter uses generic email domains (@gmail.com) or misspelled domain variations",
+      "Sends immediate PDF offer letters without structural interview technical rounds",
+      "Urgent pressure to accept within hours"
+    ],
+    "financialTrap": "Mandatory Security Deposit: Demands advance payments for background checks, corporate asset insurance, or laptop allocation fees (₹4,000 - ₹12,000) promised to be 'refundable'."
+  },
+  {
+    "jobId": "IN-2003",
+    "title": "Work From Home Data Entry / Form Filler",
+    "commonLocations": ["Tier-2 / Tier-3 Cities", "Remote"],
+    "communicationChannels": ["Classified Ads", "Web Portals", "Social Media Groups"],
+    "salaryRange": "₹20,000 - ₹35,000 / month",
+    "paymentMethods": ["UPI Collect Request"],
+    "behavioralFlags": [
+      "Requires typing out text from images into a provided offline portal",
+      "Demands identity document scans immediately upon signup",
+      "Strict accuracy SLAs designed to be impossible to meet"
+    ],
+    "financialTrap": "Legal Extortion Trap: Scammers intentionally flag the completed work as 'low accuracy' and threaten legal court action for breach of contract unless the user pays a settlement fine (₹10,000 - ₹20,000)."
+  },
+  {
+    "jobId": "IN-2004",
+    "title": "Remote Optimization Task Assistant",
+    "commonLocations": ["Pan-India", "Remote"],
+    "communicationChannels": ["WhatsApp", "Telegram"],
+    "salaryRange": "₹2,000 - ₹6,000 / day",
+    "paymentMethods": ["Cryptocurrency (USDT)", "UPI"],
+    "behavioralFlags": [
+      "Earn instant commissions daily by optimizing product ratings on partner platform",
+      "Work 1-2 hours daily from smartphone",
+      "Direct onboarding over Telegram/WhatsApp without interview",
+      "Gamified task progression"
+    ],
+    "financialTrap": "Requires user to deposit funds ('top-up') to clear dynamic negative balances and unlock high-tier commissions."
+  },
+  {
+    "jobId": "IN-2005",
+    "title": "Virtual Package Inspector & Logistics Handler",
+    "commonLocations": ["Delhi NCR", "Bengaluru", "Tier-1 Cities"],
+    "communicationChannels": ["Direct Call", "Email", "WhatsApp"],
+    "salaryRange": "₹35,000 - ₹50,000 / month",
+    "paymentMethods": ["Bank Transfer", "NEFT"],
+    "behavioralFlags": [
+      "Receive, inspect, and repackage high-end electronic consumer goods at residential address",
+      "Forward packages to international hubs using prepaid shipping labels",
+      "No formal interview required",
+      "High base pay for moving packages"
+    ],
+    "financialTrap": "Victim acts as a money/goods mule processing stolen items. Out-of-pocket shipping supplies are un-reimbursed, and bank accounts are flagged for fraudulent activity."
+  },
+  {
+    "jobId": "IN-2006",
+    "title": "Data Entry Operator & Document Reviewer",
+    "commonLocations": ["Tier-2 / Tier-3 Cities", "Remote"],
+    "communicationChannels": ["Classifieds", "SMS"],
+    "salaryRange": "₹15,000 - ₹30,000 / month",
+    "paymentMethods": ["Credit Card", "Wire Transfer", "UPI"],
+    "behavioralFlags": [
+      "Transcribe historical manuscripts and financial ledgers into digital text files",
+      "Extremely low barrier to entry with generic company profile",
+      "Mandatory orientation kit buy-in before project allocation"
+    ],
+    "financialTrap": "Forces the applicant to purchase proprietary software or training hardware from an approved portal before work begins. The seller disappears."
+  },
+  {
+    "jobId": "IN-2007",
+    "title": "Secret Shopper & Hospitality Evaluator",
+    "commonLocations": ["Mumbai", "Bengaluru", "Chennai"],
+    "communicationChannels": ["Post / Courier", "Email", "Direct Call"],
+    "salaryRange": "₹25,000 - ₹40,000 / assignment",
+    "paymentMethods": ["Paper Check", "Bank Deposit"],
+    "behavioralFlags": [
+      "Unsolicited job offer to evaluate customer service standards at local department stores",
+      "High advance payment checks mailed to residence",
+      "Instructs applicant to wire money to third-party vendor"
+    ],
+    "financialTrap": "Scammers send a fake check for ₹1,50,000, instructing you to deposit it, keep ₹25,000 as pay, and wire the remaining to a vendor. The check bounces days later, leaving you fully liable to the bank."
+  },
+  {
+    "jobId": "IN-2008",
+    "title": "App Review Optimizer",
+    "commonLocations": ["Remote", "Pan-India"],
+    "communicationChannels": ["Telegram VIP Group", "WhatsApp"],
+    "salaryRange": "₹1,500 - ₹4,500 / day",
+    "paymentMethods": ["Cryptocurrency (USDT/BTC)", "UPI"],
+    "behavioralFlags": [
+      "Click to review applications per day to generate digital traffic metrics",
+      "Promises instant withdrawals of daily earnings",
+      "Group chat social pressure tactics with fake withdrawal receipts"
+    ],
+    "financialTrap": "App introduces a 'Combo App' which forces your balance negative. You must keep sending crypto/cash to recover your locked cash until you are fully drained."
+  },
+  {
+    "jobId": "IN-2009",
+    "title": "Online Customer Support Representative",
+    "commonLocations": ["Remote", "Bengaluru", "Hyderabad", "Noida"],
+    "communicationChannels": ["Telegram", "Google Meet Link", "WhatsApp"],
+    "salaryRange": "₹25,000 - ₹45,000 / month",
+    "paymentMethods": ["Direct Deposit", "Bank Transfer"],
+    "behavioralFlags": [
+      "Respond to inbound chat inquiries regarding e-commerce shipments",
+      "Demands extensive personal details immediately upon registration",
+      "Background check requires custom untrusted link, OTP, and selfie holding ID"
+    ],
+    "financialTrap": "Requires full bank details, identity document copies, and selfie verification under the guise of an 'onboarding check', which is then used to open fraudulent credit lines."
+  },
+  {
+    "jobId": "IN-2010",
+    "title": "Crypto Arbitrage Trader Assistant",
+    "commonLocations": ["Remote", "Pan-India"],
+    "communicationChannels": ["Telegram", "Signal"],
+    "salaryRange": "₹3,000 - ₹10,000 / day",
+    "paymentMethods": ["Cryptocurrency (USDT/ETH)", "P2P Transfer"],
+    "behavioralFlags": [
+      "Assist international investment fund manager by processing local transactions",
+      "Execute currency transfers on decentralized exchanges based on real-time market data",
+      "Using personal crypto or bank exchange accounts to handle third-party capital"
+    ],
+    "financialTrap": "Requires you to use your personal crypto/bank accounts to swap funds. The original money comes from victim exploits, rendering you criminally liable for money laundering."
+  },
+  {
+    "jobId": "IN-2011",
+    "title": "Social Media Engagement Optimizer",
+    "commonLocations": ["Remote", "Tier-2 / Tier-3 Cities"],
+    "communicationChannels": ["Telegram Channel", "WhatsApp"],
+    "salaryRange": "₹2,000 - ₹5,000 / day",
+    "paymentMethods": ["Cryptocurrency (USDT)", "UPI"],
+    "behavioralFlags": [
+      "Like, subscribe, and follow trending video accounts to help creators grow",
+      "Tiered subscription model for employment",
+      "VIP level upgrades required for high commissions"
+    ],
+    "financialTrap": "Locks your account payouts until you buy a higher 'VIP Level Tier' package using your own funds. Once paid, the system triggers a platform server error."
+  },
+  {
+    "jobId": "IN-2012",
+    "title": "Virtual Medical Billing Assistant",
+    "commonLocations": ["Remote", "Pan-India"],
+    "communicationChannels": ["Email", "Job Portal Listings", "WhatsApp"],
+    "salaryRange": "₹25,000 - ₹40,000 / month",
+    "paymentMethods": ["Bank Wire", "UPI", "Credit Card"],
+    "behavioralFlags": [
+      "Process medical invoices from home for flexible remote administration",
+      "Mandatory physical billing machine purchase or expensive proprietary software license",
+      "Promises of vendor reimbursement on first paycheck"
+    ],
+    "financialTrap": "Requires buying an expensive, proprietary billing software license and certificate course upfront. The course is a copy-pasted document and no real clients exist."
+  },
+  {
+    "jobId": "IN-2013",
+    "title": "E-Commerce Order Processor",
+    "commonLocations": ["Remote", "Bengaluru", "Mumbai", "Delhi"],
+    "communicationChannels": ["Telegram", "WhatsApp"],
+    "salaryRange": "₹3,000 - ₹7,000 / day",
+    "paymentMethods": ["Cryptocurrency (USDT)", "UPI"],
+    "behavioralFlags": [
+      "Help merchants clear global retail inventories by generating simulated purchase orders",
+      "Boost transaction volume metrics to earn high percentage tier commissions",
+      "Dashboard UI replicates real retailers with instant withdrawal lures"
+    ],
+    "financialTrap": "The simulated inventory requires out-of-pocket deposits to fund higher-valued virtual items. Once you deposit, withdrawals are blocked by fake tax fees."
+  }
+]
